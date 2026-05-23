@@ -327,9 +327,97 @@ void testXlsx() {
       expect(decoder.tables.length, expectedNoPhonetics.keys.length);
       decoder.tables.forEach((name, table) {
         expect(table.rows, expectedNoPhonetics[name]);
-      });      
+      });
+    });
+
+    // Some producers (notably the .NET ClosedXML library used by Esri ArcGIS
+    // Pro exports) emit workbook parts with a prefixed namespace —
+    // `<x:workbook>`, `<x:sheet>`, `<x:row>` instead of the default-namespaced
+    // forms most authoring tools produce. The XML is equally valid; only
+    // qualified-name-based element lookups break. This test builds a minimal
+    // workbook with `x:`-prefixed elements and asserts the decoder still
+    // reads the rows.
+    test('namespace-prefixed elements', () {
+      final bytes = _buildNamespacePrefixedXlsx();
+      final decoder = SpreadsheetDecoder.decodeBytes(bytes);
+      expect(decoder.tables.keys, ['Level Crossings']);
+      expect(decoder.tables['Level Crossings']!.rows, [
+        ['OBJECTID', 'Road Name'],
+        [4395, 'Patullos Lane'],
+      ]);
     });
   });
+}
+
+/// Builds a complete xlsx workbook in which every spreadsheetml element is
+/// prefixed (`<x:workbook>`, `<x:sheet>`, `<x:row>`, …). Sufficient to verify
+/// that the decoder handles non-default-namespaced workbooks.
+List<int> _buildNamespacePrefixedXlsx() {
+  const ns = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  const rNs = 'http://schemas.openxmlformats.org/officeDocument/2006/'
+      'relationships';
+  const pkgRelNs = 'http://schemas.openxmlformats.org/package/2006/'
+      'relationships';
+
+  final contentTypes = '<?xml version="1.0" encoding="utf-8"?>'
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/'
+      'content-types">'
+      '<Default Extension="rels" ContentType="application/vnd.'
+      'openxmlformats-package.relationships+xml" />'
+      '<Default Extension="xml" ContentType="application/xml" />'
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.'
+      'openxmlformats-officedocument.spreadsheetml.sheet.main+xml" />'
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType='
+      '"application/vnd.openxmlformats-officedocument.spreadsheetml.'
+      'worksheet+xml" />'
+      '</Types>';
+
+  final rootRels = '<?xml version="1.0" encoding="utf-8"?>'
+      '<Relationships xmlns="$pkgRelNs">'
+      '<Relationship Id="R1" Type="$rNs/officeDocument" '
+      'Target="xl/workbook.xml" />'
+      '</Relationships>';
+
+  final workbook = '<?xml version="1.0" encoding="utf-8"?>'
+      '<x:workbook xmlns:x="$ns">'
+      '<x:sheets>'
+      '<x:sheet name="Level Crossings" sheetId="1" r:id="R10" '
+      'xmlns:r="$rNs" />'
+      '</x:sheets>'
+      '</x:workbook>';
+
+  final workbookRels = '<?xml version="1.0" encoding="utf-8"?>'
+      '<Relationships xmlns="$pkgRelNs">'
+      '<Relationship Id="R10" Type="$rNs/worksheet" '
+      'Target="worksheets/sheet1.xml" />'
+      '</Relationships>';
+
+  final sheet = '<?xml version="1.0" encoding="utf-8"?>'
+      '<x:worksheet xmlns:x="$ns">'
+      '<x:sheetData>'
+      '<x:row r="1">'
+      '<x:c r="A1" t="str"><x:v>OBJECTID</x:v></x:c>'
+      '<x:c r="B1" t="str"><x:v>Road Name</x:v></x:c>'
+      '</x:row>'
+      '<x:row r="2">'
+      '<x:c r="A2" t="n"><x:v>4395</x:v></x:c>'
+      '<x:c r="B2" t="str"><x:v>Patullos Lane</x:v></x:c>'
+      '</x:row>'
+      '</x:sheetData>'
+      '</x:worksheet>';
+
+  final archive = Archive();
+  void add(String path, String content) {
+    final data = utf8.encode(content);
+    archive.addFile(ArchiveFile(path, data.length, data));
+  }
+
+  add('[Content_Types].xml', contentTypes);
+  add('_rels/.rels', rootRels);
+  add('xl/workbook.xml', workbook);
+  add('xl/_rels/workbook.xml.rels', workbookRels);
+  add('xl/worksheets/sheet1.xml', sheet);
+  return ZipEncoder().encode(archive)!;
 }
 
 void testOds() {

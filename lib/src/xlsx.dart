@@ -237,7 +237,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
     if (relations != null) {
       relations.decompress();
       var document = XmlDocument.parse(utf8.decode(relations.content));
-      document.findAllElements('Relationship').forEach((node) {
+      document.findAllElements('Relationship', namespace: '*').forEach((node) {
         var attr = node.getAttribute('Target');
         switch (node.getAttribute('Type')) {
           case _relationshipsStyles:
@@ -260,9 +260,9 @@ class XlsxDecoder extends SpreadsheetDecoder {
       styles.decompress();
       var document = XmlDocument.parse(utf8.decode(styles.content));
       document
-          .findAllElements('cellXfs')
+          .findAllElements('cellXfs', namespace: '*')
           .first
-          .findElements('xf')
+          .findElements('xf', namespace: '*')
           .forEach((node) {
         var numFmtId = node.getAttribute('numFmtId');
         if (numFmtId != null) {
@@ -279,14 +279,14 @@ class XlsxDecoder extends SpreadsheetDecoder {
     if (sharedStrings != null) {
       sharedStrings.decompress();
       var document = XmlDocument.parse(utf8.decode(sharedStrings.content));
-      document.findAllElements('si').forEach((node) {
+      document.findAllElements('si', namespace: '*').forEach((node) {
         _parseSharedString(node);
       });
     }
   }
 
   String _parseRichText(XmlElement node) {
-    return _parseValue(node.findElements('t').first);
+    return _parseValue(node.findElements('t', namespace: '*').first);
   }
 
   void _parseSharedString(XmlElement node) {
@@ -307,7 +307,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
     var workbook = _archive.findFile('xl/workbook.xml');
     workbook?.decompress();
     var document = XmlDocument.parse(utf8.decode(workbook!.content));
-    document.findAllElements('sheet').forEach((node) {
+    document.findAllElements('sheet', namespace: '*').forEach((node) {
       _parseTable(node);
     });
   }
@@ -324,8 +324,8 @@ class XlsxDecoder extends SpreadsheetDecoder {
     file?.decompress();
 
     var content = XmlDocument.parse(utf8.decode(file!.content));
-    var worksheet = content.findElements('worksheet').first;
-    var sheet = worksheet.findElements('sheetData').first;
+    var worksheet = content.findElements('worksheet', namespace: '*').first;
+    var sheet = worksheet.findElements('sheetData', namespace: '*').first;
 
     _findRows(sheet).forEach((child) {
       _parseRow(child, table);
@@ -381,12 +381,13 @@ class XlsxDecoder extends SpreadsheetDecoder {
     switch (type) {
       // sharedString
       case 's':
-        value = _sharedStrings[
-            int.parse(_parseValue(node.findElements('v').first))];
+        value = _sharedStrings[int.parse(
+            _parseValue(node.findElements('v', namespace: '*').first))];
         break;
       // boolean
       case 'b':
-        value = _parseValue(node.findElements('v').first) == '1';
+        value =
+            _parseValue(node.findElements('v', namespace: '*').first) == '1';
         break;
       // error
       case 'e':
@@ -396,20 +397,20 @@ class XlsxDecoder extends SpreadsheetDecoder {
         //  <f>CUBEVALUE("xlextdat9 Adventure Works",C$5,$A6)</f>
         //  <v>2838512.355</v>
         // </c>
-        value = _parseValue(node.findElements('v').first);
+        value = _parseValue(node.findElements('v', namespace: '*').first);
         break;
       // inline string
       case 'inlineStr':
         // <c r="B2" t="inlineStr">
         // <is><t>Hello world</t></is>
         // </c>
-        value = _parseValue(node.findAllElements('t').first);
+        value = _parseValue(node.findAllElements('t', namespace: '*').first);
         break;
       // number
       case 'n':
       default:
         var s = node.getAttribute('s');
-        var valueNode = node.findElements('v');
+        var valueNode = node.findElements('v', namespace: '*');
         var content = valueNode.first;
         if (s != null) {
           var fmtId = _numFormats[int.parse(s)];
@@ -454,10 +455,10 @@ class XlsxDecoder extends SpreadsheetDecoder {
   }
 
   static Iterable<XmlElement> _findRows(XmlElement table) =>
-      table.findElements('row');
+      table.findElements('row', namespace: '*');
 
   static Iterable<XmlElement> _findCells(XmlElement row) =>
-      row.findElements('c');
+      row.findElements('c', namespace: '*');
 
   static int _getRowNumber(XmlElement row) => int.parse(row.getAttribute('r')!);
   static void _setRowNumber(XmlElement row, int index) =>
