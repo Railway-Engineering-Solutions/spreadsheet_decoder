@@ -222,7 +222,7 @@ class OdsDecoder extends SpreadsheetDecoder {
       if (child is XmlElement) {
         buffer.write(_normalizeNewLine(_readString(child)));
       } else if (child is XmlText) {
-        buffer.write(_normalizeNewLine(child.text));
+        buffer.write(_normalizeNewLine(child.value));
       }
     }
 

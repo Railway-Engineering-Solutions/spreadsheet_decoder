@@ -447,7 +447,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
 
     for (var child in node.children) {
       if (child is XmlText) {
-        buffer.write(_normalizeNewLine(child.text));
+        buffer.write(_normalizeNewLine(child.value));
       }
     }
 
