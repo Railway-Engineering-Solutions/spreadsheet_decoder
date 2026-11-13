@@ -3,6 +3,7 @@
 library spreadsheet_test;
 
 import 'dart:convert';
+import 'package:archive/archive.dart';
 import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 import 'package:test/test.dart';
 

@@ -1,4 +1,4 @@
-part of spreadsheet_decoder;
+part of '../spreadsheet_decoder.dart';
 
 const String _relationships =
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -237,7 +237,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
     if (relations != null) {
       relations.decompress();
       var document = XmlDocument.parse(utf8.decode(relations.content));
-      document.findAllElements('Relationship', namespace: '*').forEach((node) {
+      document.findAllElements('Relationship', namespaceUri: '*').forEach((node) {
         var attr = node.getAttribute('Target');
         switch (node.getAttribute('Type')) {
           case _relationshipsStyles:
@@ -260,9 +260,9 @@ class XlsxDecoder extends SpreadsheetDecoder {
       styles.decompress();
       var document = XmlDocument.parse(utf8.decode(styles.content));
       document
-          .findAllElements('cellXfs', namespace: '*')
+          .findAllElements('cellXfs', namespaceUri: '*')
           .first
-          .findElements('xf', namespace: '*')
+          .findElements('xf', namespaceUri: '*')
           .forEach((node) {
         var numFmtId = node.getAttribute('numFmtId');
         if (numFmtId != null) {
@@ -279,14 +279,14 @@ class XlsxDecoder extends SpreadsheetDecoder {
     if (sharedStrings != null) {
       sharedStrings.decompress();
       var document = XmlDocument.parse(utf8.decode(sharedStrings.content));
-      document.findAllElements('si', namespace: '*').forEach((node) {
+      document.findAllElements('si', namespaceUri: '*').forEach((node) {
         _parseSharedString(node);
       });
     }
   }
 
   String _parseRichText(XmlElement node) {
-    return _parseValue(node.findElements('t', namespace: '*').first);
+    return _parseValue(node.findElements('t', namespaceUri: '*').first);
   }
 
   void _parseSharedString(XmlElement node) {
@@ -307,7 +307,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
     var workbook = _archive.findFile('xl/workbook.xml');
     workbook?.decompress();
     var document = XmlDocument.parse(utf8.decode(workbook!.content));
-    document.findAllElements('sheet', namespace: '*').forEach((node) {
+    document.findAllElements('sheet', namespaceUri: '*').forEach((node) {
       _parseTable(node);
     });
   }
@@ -315,7 +315,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
   void _parseTable(XmlElement node) {
     var name = node.getAttribute('name')!;
     var target =
-        _worksheetTargets[node.getAttribute('id', namespace: _relationships)]!;
+        _worksheetTargets[node.getAttribute('id', namespaceUri: _relationships)]!;
     var table = tables[name] = SpreadsheetTable(name);
 
     final namePath =
@@ -324,8 +324,8 @@ class XlsxDecoder extends SpreadsheetDecoder {
     file?.decompress();
 
     var content = XmlDocument.parse(utf8.decode(file!.content));
-    var worksheet = content.findElements('worksheet', namespace: '*').first;
-    var sheet = worksheet.findElements('sheetData', namespace: '*').first;
+    var worksheet = content.findElements('worksheet', namespaceUri: '*').first;
+    var sheet = worksheet.findElements('sheetData', namespaceUri: '*').first;
 
     _findRows(sheet).forEach((child) {
       _parseRow(child, table);
@@ -382,12 +382,12 @@ class XlsxDecoder extends SpreadsheetDecoder {
       // sharedString
       case 's':
         value = _sharedStrings[int.parse(
-            _parseValue(node.findElements('v', namespace: '*').first))];
+            _parseValue(node.findElements('v', namespaceUri: '*').first))];
         break;
       // boolean
       case 'b':
         value =
-            _parseValue(node.findElements('v', namespace: '*').first) == '1';
+            _parseValue(node.findElements('v', namespaceUri: '*').first) == '1';
         break;
       // error
       case 'e':
@@ -397,20 +397,20 @@ class XlsxDecoder extends SpreadsheetDecoder {
         //  <f>CUBEVALUE("xlextdat9 Adventure Works",C$5,$A6)</f>
         //  <v>2838512.355</v>
         // </c>
-        value = _parseValue(node.findElements('v', namespace: '*').first);
+        value = _parseValue(node.findElements('v', namespaceUri: '*').first);
         break;
       // inline string
       case 'inlineStr':
         // <c r="B2" t="inlineStr">
         // <is><t>Hello world</t></is>
         // </c>
-        value = _parseValue(node.findAllElements('t', namespace: '*').first);
+        value = _parseValue(node.findAllElements('t', namespaceUri: '*').first);
         break;
       // number
       case 'n':
       default:
         var s = node.getAttribute('s');
-        var valueNode = node.findElements('v', namespace: '*');
+        var valueNode = node.findElements('v', namespaceUri: '*');
         var content = valueNode.first;
         if (s != null) {
           var fmtId = _numFormats[int.parse(s)];
@@ -455,10 +455,10 @@ class XlsxDecoder extends SpreadsheetDecoder {
   }
 
   static Iterable<XmlElement> _findRows(XmlElement table) =>
-      table.findElements('row', namespace: '*');
+      table.findElements('row', namespaceUri: '*');
 
   static Iterable<XmlElement> _findCells(XmlElement row) =>
-      row.findElements('c', namespace: '*');
+      row.findElements('c', namespaceUri: '*');
 
   static int _getRowNumber(XmlElement row) => int.parse(row.getAttribute('r')!);
   static void _setRowNumber(XmlElement row, int index) =>
@@ -527,9 +527,9 @@ class XlsxDecoder extends SpreadsheetDecoder {
 
   static XmlElement _createRow(int rowIndex) {
     var attributes = <XmlAttribute>[
-      XmlAttribute(XmlName('r'), (rowIndex + 1).toString()),
+      XmlAttribute(XmlName.qualified('r'), (rowIndex + 1).toString()),
     ];
-    return XmlElement(XmlName('row'), attributes, []);
+    return XmlElement(XmlName.qualified('row'), attributes, []);
   }
 
   static XmlElement _insertRow(
@@ -570,16 +570,16 @@ class XlsxDecoder extends SpreadsheetDecoder {
   static XmlElement _createCell(int columnIndex, int rowIndex, dynamic value) {
     var attributes = <XmlAttribute>[
       XmlAttribute(
-          XmlName('r'), '${numericToLetters(columnIndex + 1)}${rowIndex + 1}'),
-      XmlAttribute(XmlName('t'), 'inlineStr'),
+          XmlName.qualified('r'), '${numericToLetters(columnIndex + 1)}${rowIndex + 1}'),
+      XmlAttribute(XmlName.qualified('t'), 'inlineStr'),
     ];
     var children = value == null
         ? <XmlElement>[]
         : <XmlElement>[
-            XmlElement(XmlName('is'), [], [
-              XmlElement(XmlName('t'), [], [XmlText(value.toString())])
+            XmlElement(XmlName.qualified('is'), [], [
+              XmlElement(XmlName.qualified('t'), [], [XmlText(value.toString())])
             ]),
           ];
-    return XmlElement(XmlName('c'), attributes, children);
+    return XmlElement(XmlName.qualified('c'), attributes, children);
   }
 }

@@ -1,4 +1,4 @@
-part of spreadsheet_decoder;
+part of '../spreadsheet_decoder.dart';
 
 const _spreasheetOds = 'ods';
 const _spreasheetXlsx = 'xlsx';
@@ -169,7 +169,7 @@ abstract class SpreadsheetDecoder {
       var content = utf8.encode(xml);
       _archiveFiles[xmlFile] = ArchiveFile(xmlFile, content.length, content);
     }
-    return ZipEncoder().encode(_cloneArchive(_archive)) as List<int>;
+    return ZipEncoder().encode(_cloneArchive(_archive));
   }
 
   /// Encode data url
@@ -188,7 +188,7 @@ abstract class SpreadsheetDecoder {
         if (_archiveFiles.containsKey(file.name)) {
           copy = _archiveFiles[file.name]!;
         } else {
-          var content = file.content as Uint8List;
+          var content = file.content;
           var compress = file.compression;
           copy = ArchiveFile(file.name, content.length, content)
             ..compression = compress;

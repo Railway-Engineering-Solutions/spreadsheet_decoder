@@ -417,7 +417,7 @@ List<int> _buildNamespacePrefixedXlsx() {
   add('xl/workbook.xml', workbook);
   add('xl/_rels/workbook.xml.rels', workbookRels);
   add('xl/worksheets/sheet1.xml', sheet);
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 void testOds() {

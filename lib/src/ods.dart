@@ -7,7 +7,7 @@
 //   - spanned columns
 //   - hidden rows (visible in resulting table)
 //   - hidden columns (visible in resulting table)
-part of spreadsheet_decoder;
+part of '../spreadsheet_decoder.dart';
 
 const String contentXML = 'content.xml';
 
@@ -351,15 +351,15 @@ class OdsDecoder extends SpreadsheetDecoder {
 
   static XmlElement _createRow(int maxCols, String style) {
     var attributes = <XmlAttribute>[
-      XmlAttribute(XmlName('table:style-name'), style),
+      XmlAttribute(XmlName.qualified('table:style-name'), style),
     ];
     var children = <XmlNode>[
-      XmlElement(XmlName('table:table-cell'), [
+      XmlElement(XmlName.qualified('table:table-cell'), [
         XmlAttribute(
-            XmlName('table:number-columns-repeated'), maxCols.toString()),
+            XmlName.qualified('table:number-columns-repeated'), maxCols.toString()),
       ]),
     ];
-    return XmlElement(XmlName('table:table-row'), attributes, children);
+    return XmlElement(XmlName.qualified('table:table-row'), attributes, children);
   }
 
   // TODO Manage value's type
@@ -367,14 +367,14 @@ class OdsDecoder extends SpreadsheetDecoder {
     var attributes = value == null
         ? <XmlAttribute>[]
         : <XmlAttribute>[
-            XmlAttribute(XmlName('office:value-type'), 'string'),
-            XmlAttribute(XmlName('calcext:value-type'), 'string'),
+            XmlAttribute(XmlName.qualified('office:value-type'), 'string'),
+            XmlAttribute(XmlName.qualified('calcext:value-type'), 'string'),
           ];
     var children = value == null
         ? <XmlNode>[]
         : <XmlNode>[
-            XmlElement(XmlName('text:p'), [], [XmlText(value.toString())]),
+            XmlElement(XmlName.qualified('text:p'), [], [XmlText(value.toString())]),
           ];
-    return XmlElement(XmlName('table:table-cell'), attributes, children);
+    return XmlElement(XmlName.qualified('table:table-cell'), attributes, children);
   }
 }

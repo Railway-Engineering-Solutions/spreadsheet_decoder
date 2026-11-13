@@ -1,3 +1,7 @@
+## 2.3.1
+Update dependencies: archive ^4.7.0, xml ^7.0.1, lints ^6.1.0, test ^1.33.0 (Dart ^3.11)
+Replace xml 7 deprecations (`XmlName.qualified`, `namespaceUri:`) and drop casts made redundant by archive 4
+
 ## 2.3.0
 Update dependencies
 
